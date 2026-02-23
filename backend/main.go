@@ -2,29 +2,25 @@ package main
 
 import (
 	"net/http"
-	"os"
+
+	"github.com/jhoancamilorayomejia/uptime-monitor/types"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	// Puerto por variable de entorno
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	r := gin.Default()
 
-	// Router Gin
-	router := gin.Default()
+	r.GET("/api/status", func(c *gin.Context) {
 
-	// Endpoint básico de health check
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "ok",
-			"message": "Uptime Monitor API running",
-		})
+		services := []types.ServiceStatus{
+			types.CheckService("Google", "https://www.google.com"),
+			types.CheckService("GitHub", "https://api.github.com"),
+			types.CheckService("Servicio Falso", "https://no-existe-123.com"),
+		}
+
+		c.JSON(http.StatusOK, services)
 	})
 
-	// Levantar servidor
-	router.Run(":" + port)
+	r.Run(":8080")
 }
