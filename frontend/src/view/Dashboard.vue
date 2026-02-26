@@ -6,6 +6,9 @@ const loading = ref(true)
 const error = ref(null)
 
 const fetchServices = async () => {
+  loading.value = true
+  error.value = null
+
   try {
     const response = await fetch('http://localhost:8080/api/status')
 
@@ -38,8 +41,8 @@ onMounted(() => {
 
     <section v-if="!loading && !error" class="services">
       <div
-        v-for="(service, index) in services"
-        :key="index"
+        v-for="service in services"
+        :key="service.id"
         class="service-card"
       >
         <h3>{{ service.name }}</h3>
@@ -52,7 +55,7 @@ onMounted(() => {
           {{ service.status }}
         </span>
 
-        <p v-if="service.responseTime > 0">
+        <p v-if="service.status === 'UP'">
           ⏱ {{ service.responseTime }} ms
         </p>
         <p v-else>
@@ -109,5 +112,10 @@ onMounted(() => {
 .down {
   background: #fdecea;
   color: #c82333;
+}
+
+.error {
+  color: #c82333;
+  font-weight: bold;
 }
 </style>

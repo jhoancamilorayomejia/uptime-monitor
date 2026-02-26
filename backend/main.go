@@ -3,14 +3,21 @@ package main
 import (
 	"net/http"
 
-	"github.com/jhoancamilorayomejia/uptime-monitor/backend/types"
-
 	"github.com/gin-gonic/gin"
+	"github.com/jhoancamilorayomejia/uptime-monitor/backend/db"
+	"github.com/jhoancamilorayomejia/uptime-monitor/backend/types"
 )
 
 func main() {
+	// 🔹 Conexión DB
+	database, err := db.ConnectDB()
+	if err != nil {
+		panic(err)
+	}
+
 	r := gin.Default()
 
+	// 🔹 CORS simple
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -20,19 +27,25 @@ func main() {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Next()
 	})
 
+	// 🔹 Endpoint principal
 	r.GET("/api/status", func(c *gin.Context) {
 
-		services := []types.ServiceStatus{
-			types.CheckService("Google", "https://www.google.com"),
-			types.CheckService("GitHub", "https://api.github.com"),
-			types.CheckService("Servicio Falso", "https://no-existe-123.com"),
+		services, err := types.GetServices(database)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
-		c.JSON(http.StatusOK, services)
+		var result []types.ServiceStatus
+
+		for _, service := range services {
+			result = append(result, types.CheckService(service))
+		}
+
+		c.JSON(http.StatusOK, result)
 	})
 
 	r.Run(":8080")
